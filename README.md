@@ -10,6 +10,6 @@ For use you need the following Python libs:
 
 If you want to save a video form this you may also require ffmpeg.
 
-The animator should work both on unix and windows systems.
+The actual version (with ctypes) will just work on Linux
 
 Have fun :D
