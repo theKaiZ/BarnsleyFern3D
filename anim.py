@@ -7,6 +7,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from random import random,seed
 import numpy as np
+from time import time,sleep
+from ctypes import *
+from math import sin
 
 @jit
 def farbe(x,y,z,frame):
@@ -17,21 +20,30 @@ def sin90(val):
     return sin(val*pi/90)
 
 class Animation():
-    def __init__(self,frames= 360, max = 1000, save=False):
-        self.num_frames = frames
-        self.save = save
+    video = 0
+    frame = 0
+    size = (800,800)
+    p_max = 10000
+    save = False
+    f_max = 360
+    running = True
+    color = False
+    pt_size = 1
+    def __init__(self, **kwargs):
+        for key in kwargs:
+            setattr(self,key,kwargs[key])
+        os.system("rm -r pics/")
         pygame.init()
-        self.max_points = max
-        self.frame = 0
-        self.size = (800,800)
         self.screen = pygame.display.set_mode(self.size, DOUBLEBUF|OPENGL)
         gluPerspective(45, (self.size[0]/self.size[1]), 0.1, 50.0)
         glEnable(GL_DEPTH_TEST)
         self.zoom()
-        self.running = True
         self.pts = [[.0, .0, .0]]
         self.set_matrices()
+        self.after_init()
         self.mainloop()
+    def after_init(self):
+        pass
     def zoom(self):
         glTranslatef(0.0, -8.0, -21)
     def set_matrices(self):
@@ -66,7 +78,7 @@ class Animation():
                                   [-0.00,-.0  ,.0   ,.0]]])#Ende Array 4)
 
     def add_point(self):
-        a = random() * 100
+        a  = random() * 100
         old_point = self.pts[-1]
         new_point = []
         for i in range(len(self.chances)):
@@ -84,30 +96,50 @@ class Animation():
     def make_points(self):
         self.pts = [[.0, .0, .0]]
         seed(0)
-        for j in range(self.max_points):
+        for j in range(self.p_max):
             self.add_point()
 
     def draw(self):
-        glPointSize(1.0)
+        glPointSize(self.pt_size)
         glBegin(GL_POINTS)
+        if not self.color:
+           glColor(farbe(self.pts[0][0], self.pts[0][1], self.pts[0][2], self.frame))
         for point in self.pts:
-            glColor(farbe(point[0], point[1], point[2], self.frame))
+            if self.color:
+               glColor(farbe(self.pts[0][0], self.pts[0][1], self.pts[0][2], self.frame))
             glVertex3d(point[0] - 0, point[1] - 0, point[2] - 0)
         glEnd()
-
+        
     def checkpoint(self):
         pass
-  
+
+    def save_frame(self):
+        pygame.image.save(self.screen, "pics/" + "0" * (3 - len(str(self.frame))) + str(self.frame) + ".png")
+
+    def rotation(self):
+        glRotatef(1, 1, 2, 1)
+
     def mainloop(self):
-        while self.running and self.frame < self.num_frames:
+        while self.running and (self.frame < self.f_max or self.f_max == 0):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                    self.running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
+                    elif event.key == pygame.K_a:
+                        self.c_calcs.apply(c_int(self.frame))
+                        self.frame = 359
+                        self.c_calcs.reset()
+                    elif event.key == pygame.K_v:
+                        self.video = True
+                        self.running  = False
+                    elif event.key == pygame.K_DOWN:
+                        glTranslatef(0.0, 0, -0.1)
+                    elif event.key == pygame.K_UP:
+                        glTranslatef(0.0, 0, 0.1)
             self.checkpoint()
-            glRotatef(1, 1, 1, 1)
+            self.rotation()
             glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
             self.make_points()
             self.draw()
@@ -116,19 +148,76 @@ class Animation():
             if not os.path.exists("pics/"):
                 os.mkdir("pics/")
             if self.save:
-              pygame.image.save(self.screen, "pics/" + "0" * (3 - len(str(self.frame))) + str(self.frame) + ".png")
-            print(self.frame)
-
+              self.save_frame()
             pygame.display.flip()
             self.frame += 1
         pygame.quit()
-        if self.running and self.save:
+        if (self.save and self.running) or self.video:
             os.system("ffmpeg -f image2 -i ./pics/%03d.png -pix_fmt yuv420p -y "+self.__class__.__name__+".mp4")
             os.system("vlc --no-repeat --play-and-exit "+self.__class__.__name__+".mp4")
 
+class C_Animation(Animation):
+    a = 0
+    b = 0
+    c = 0
+    pp = 0
+    def zoom(self):
+        '''The inititial Zoom perspective, go not to far!'''
+        glTranslatef(0.0, -0, -40)
+
+    def after_init(self):
+       '''Compile the C-code and load the library with ctypes'''
+       os.system("gcc -shared -o calcs.so -lm -fPIC calcs.c")
+       sleep(2)
+       LibName = 'calcs.so'
+       AbsLibPath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + LibName
+       self.c_calcs = CDLL(AbsLibPath)
+       self.result = (c_float*(3*self.p_max))()
+
+    def make_points(self):
+        '''In this case, call the ctypes library to calc the points'''
+        self.c_calcs.calc(c_int(self.p_max),self.result)
+
+    def rotation(self):
+        glRotatef(1, 1, 1, 1)
+    def draw(self):
+        glPointSize(self.pt_size)
+        glBegin(GL_POINTS)
+        glColor((0.3+sin(self.pp*pi/180)*0.2, 0.4+0.2*sin(self.pp*pi/90), 0.7+0.25*sin(self.pp*pi/80)))
+        for x,y,z in zip(self.result[0::3],self.result[1::3],self.result[2::3]):
+           glVertex3d(x,y,z)
+        glEnd()
+    def save_frame(self):
+        pygame.image.save(self.screen, "pics/" + "0" * (3 - len(str(self.pp))) + str(self.pp) + ".png")
+        
+    def checkpoint(self):
+       if self.c_calcs.is_prime(c_long(self.pp)):
+          self.c_calcs.apply()     
+       self.pp +=1
+ 
+class C_Flower(C_Animation):
+    def zoom(self):
+        glTranslatef(0.0, -0.0, -25)
+    def draw(self):
+        glPointSize(self.pt_size)
+        glBegin(GL_POINTS)
+        if not self.color:
+            glColor((0.3+sin(self.pp*pi/360)*0.2, 0.4+0.2*cos(self.pp*pi/360), 0.7+0.25*sin(self.pp*pi/720)))  
+        #zip the arguments, i hoped it was faster than the basic iteration
+        for x,y,z in zip(self.result[0::3],self.result[1::3],self.result[2::3]):
+            if self.color:
+                glColor((0.3+sin(x+self.pp*pi/360)*0.2, 0.4+0.2*cos(y+self.pp*pi/360), 0.7+0.25*sin(z+self.pp*pi/720)))  
+            glVertex3d(x,y,z)
+            glVertex3d(-x,y,z)
+            glVertex3d(x,-y,z)
+            glVertex3d(-x,-y,z)
+        glEnd()
+
+
+
 class Anim2(Animation):
     def zoom(self):
-        glTranslatef(0.0, -0.0, -12)
+        glTranslatef(0.0, -0.0, -21)
     def set_matrices(self):
         self.chances = [5, 86, 93, 100]
         self.matrix = np.array([[[.0, .0, .0, .0],
@@ -186,7 +275,7 @@ class Anim2(Animation):
 
 class Flower(Anim2):
     def zoom(self):
-        glTranslatef(0.0, -.0, -12)
+        glTranslatef(0.0, -.0, -21)
     def set_matrices(self):
         self.chances = [5, 86, 93, 100]
         self.matrix = np.array([[[ .0  , .0  , .0  ,  .0 ],
@@ -215,6 +304,11 @@ class Flower(Anim2):
                                   [.00  ,0.00 ,.0   ,.00],
                                   [-0.00,-.0  ,.0   ,.0]]])#Ende Array 4)
 
-Flower(360,3000)
 
 
+def demo():
+   C_Flower(f_max = 0, p_max = 10000,pt_size = 1, color=True)
+
+
+if __name__ == '__main__':
+    demo()
