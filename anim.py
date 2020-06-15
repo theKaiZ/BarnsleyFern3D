@@ -42,10 +42,13 @@ class Animation():
         self.set_matrices()
         self.after_init()
         self.mainloop()
+
     def after_init(self):
         pass
+
     def zoom(self):
         glTranslatef(0.0, -8.0, -21)
+
     def set_matrices(self):
         self.chances = [5,86,93,100]
         #the initial matrix to create the static barnsley fern
@@ -93,6 +96,7 @@ class Animation():
                            + used[i][3]                + sin90(self.frame) * alt[i][3]          )
 
         self.pts.append(new_point)
+
     def make_points(self):
         self.pts = [[.0, .0, .0]]
         seed(0)
@@ -180,6 +184,7 @@ class C_Animation(Animation):
 
     def rotation(self):
         glRotatef(1, 1, 1, 1)
+
     def draw(self):
         glPointSize(self.pt_size)
         glBegin(GL_POINTS)
@@ -198,6 +203,7 @@ class C_Animation(Animation):
 class C_Flower(C_Animation):
     def zoom(self):
         glTranslatef(0.0, -0.0, -25)
+
     def draw(self):
         glPointSize(self.pt_size)
         glBegin(GL_POINTS)
@@ -213,101 +219,8 @@ class C_Flower(C_Animation):
             glVertex3d(-x,-y,z)
         glEnd()
 
-
-
-class Anim2(Animation):
-    def zoom(self):
-        glTranslatef(0.0, -0.0, -21)
-    def set_matrices(self):
-        self.chances = [5, 86, 93, 100]
-        self.matrix = np.array([[[.0, .0, .0, .0],
-                                 [.0, .16, -.1, .1],
-                                 [-.1, .12, .43, - .1]],  ###Ende Array 1
-                                [[.85, .075, -.225, -.0],
-                                 [-.24, .88, -.03, 1.7],
-                                 [.175, -.115, .07, 1.8]],  # Ende Array 2
-                                [[.14, -.26, -0.1, 0],
-                                 [.14, .22, .1, 1.6],
-                                 [-.11, -.04, .24, 1.5]],  # Ende Array 3
-                                [[-.15, 0.28, 0, 0],
-                                 [.206, 0.24, .1, .44],
-                                 [-0.20, -.1, .2, .7]]])  # Ende Array 4
-        #                          x     y     z      n
-        self.alter = np.array([[[.00, .0, .00, .0],
-                                [.002, .02, -.0, .0],
-                                [.0, .0, .05, - .0]],  ###Ende Array 1
-                               [[.02, .04, .0, .0],
-                                [+.03, .06, -.0, 0.0],
-                                [.17, -.0, .06, 0.0]],  # Ende Array 2
-                               [[.075, -.0, 0.2, .10],
-                                [.1, .1, .0, 0.0],
-                                [.1, -.2, -.100, 0.0]],  # Ende Array 3
-                               [[-.30, 0.10, 0.1, 0],
-                                [.02, 0.00, .05, .00],
-                                [-0.10, -.0, .05, .02]]])  #Ende Array 4)
-
-
-    def checkpoint(self):
-        if self.frame == 360:
-          self.alter = np.array([[[ .0 , .0  , .0  ,  .0 ],
-                                  [ .0  , .03 ,-.02  ,  .0 ],
-                                  [ .0  , .0 , .0 ,- .0 ]],###Ende Array 1
-                                 [[.04, .0 , .04  ,  .06 ],
-                                  [+.0 , .05 ,-.0  , 0.03],
-                                  [ .05 ,-.0 , .0 , 0.08]],# Ende Array 2
-                                 [[ .03  , -.0,  0  ,  0],
-                                  [ .0 ,  .0,  .0 ,  0.0],
-                                  [ .0 ,-.0  ,  .00,  0.0]],#Ende Array 3
-                                 [[-.00 ,0.03 ,0,0] ,
-                                  [.00  ,0.00 ,.0   ,.00],
-                                  [-0.00,-.0  ,.0   ,.0]]])#Ende Array 4)
-    def draw(self):
-        glPointSize(1.0)
-        glBegin(GL_POINTS)
-        for point in self.pts:
-            glColor(farbe(point[0], point[1], point[2], self.frame))
-            glVertex3d(point[0]*0.3 - 0, point[1]*0.3 - 0, point[2] *0.3- 0)
-            glVertex3d(-point[0]*0.3 - 0, -point[1] *0.3 - 0, -point[2] *0.3- 0)
-            glVertex3d(-point[0] * 0.3 - 0, point[1] * 0.3 - 0, -point[2] * 0.3 - 0)
-            glVertex3d(point[0] * 0.3 - 0, -point[1] * 0.3 - 0, point[2] * 0.3 - 0)
-        glEnd()
-
-
-class Flower(Anim2):
-    def zoom(self):
-        glTranslatef(0.0, -.0, -21)
-    def set_matrices(self):
-        self.chances = [5, 86, 93, 100]
-        self.matrix = np.array([[[ .0  , .0  , .0  ,  .0 ],
-                                  [ .0  , .16 ,-.1  ,  .1 ],
-                                  [ .1  , .12 , .43 ,- .1 ]],###Ende Array 1
-                                 [[ .87, .075 ,-.225  ,  -.0 ],
-                                  [-.24 , .89 ,-.03  , 1.7],
-                                  [ .175 ,-.115 , .07 , 1.8]],# Ende Array 2
-                                 [[ .14  , -.26, -0.1  ,  0],
-                                  [ .14 ,  .22,  .1 ,  1.6],
-                                  [-.11 ,-.04 ,  .24,  1.5]],#Ende Array 3
-                                 [[-.15 ,0.28 ,0,0] ,
-                                  [.206  ,0.24 ,.1   ,.44],
-                                  [-0.20,-.1  ,.2   ,.7]]])#Ende Array 4
-        #                          x     y     z      n
-        self.alter = np.array([[[ .0 , .0  , .0  ,  .0 ],
-                                  [ .0  , .0 ,-.0  ,  .0 ],
-                                  [ .0  , .0 , .0 ,- .0 ]],###Ende Array 1
-                                 [[.00, .07 , .0  ,  .0 ],
-                                  [+.0 , .08 ,-.0  , 0.0],
-                                  [ .0 ,-.0 , .06 , 0.0]],# Ende Array 2
-                                 [[ .0  , -.0,  0  ,  0],
-                                  [ .0 ,  .0,  .0 ,  0.0],
-                                  [ .0 ,-.0  ,  .00,  0.0]],#Ende Array 3
-                                 [[-.00 ,0.00 ,0,0] ,
-                                  [.00  ,0.00 ,.0   ,.00],
-                                  [-0.00,-.0  ,.0   ,.0]]])#Ende Array 4)
-
-
-
 def demo():
-   C_Flower(f_max = 0, p_max = 10000,pt_size = 1, color=True)
+   C_Flower(f_max = 0, p_max = 10000,pt_size = 1, color=False)
 
 
 if __name__ == '__main__':

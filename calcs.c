@@ -106,8 +106,8 @@ void apply(){
  print_all();}
 
 void change_alter(unsigned char a, unsigned char b, unsigned char c, float d){
- alter[a][b][c] = d;
- print_all();}
+  alter[a][b][c] = d;
+  print_all();}
 
 void calc(const int num_points, float *data){
   srand(1);
